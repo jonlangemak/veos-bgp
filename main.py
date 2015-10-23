@@ -3,7 +3,9 @@ from jsonrpclib import Server
 import ssl
 import dns
 import json
-from prettytable import PrettyTable 
+from prettytable import PrettyTable
+import datetime
+import time
 
 from dns import resolver
 from dns import reversename
@@ -26,10 +28,10 @@ else:
 switch = Server("https://vagrant:vagrant@localhost:8443/command-api")
 response = switch.runCmds(1, ["show ip bgp summary"])
 
-print json.dumps(response, indent=4, sort_keys=True)
+# print json.dumps(response, indent=4, sort_keys=True)
 
 
-table = PrettyTable(["Peer", "DNS Name", "ASN"])
+table = PrettyTable(["Peer", "DNS Name", "ASN", "State", "Up Down Time"])
 
 for peers in response[0]['vrfs']['default']['peers']:
     try:
@@ -40,8 +42,14 @@ for peers in response[0]['vrfs']['default']['peers']:
 
     asn = response[0]['vrfs']['default']['peers'][peers]['asn']
 
-    table.add_row([peers, resolved, asn])
+    epoch = response[0]['vrfs']['default']['peers'][peers]['upDownTime']
 
+    state = response[0]['vrfs']['default']['peers'][peers]['peerState']
 
+    udtime = time.time() - epoch
+    udtime = datetime.timedelta(seconds=udtime)
+    udtime = str(udtime).split(".")[0]
+
+    table.add_row([peers, resolved, asn, state, udtime])
 
 print table
